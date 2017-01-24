@@ -1,0 +1,21 @@
+{
+  "name": "script-monitor",
+  "version": "0.0.1",
+  "description": "Script to monitor scripts on theguardian.com",
+  "main": "main.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "start": "AWS_PROFILE=frontend node -e \"require('./main').handler()\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Francis Carr",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.7.27",
+    "lodash": "^4.17.4",
+    "md5": "^2.2.1",
+    "node-fetch": "^1.6.3"
+  }
+}
