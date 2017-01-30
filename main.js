@@ -67,7 +67,8 @@ function putObject(key, content) {
   const params = {
     Bucket: BUCKET,
     Key: key,
-    Body: content
+    Body: content,
+    ContentType: 'application/javascript'
   };
 
   return new Promise((resolve, reject) => {
