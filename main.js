@@ -35,8 +35,8 @@ const urlsToCheck = [
   }
 ]
 
-function createS3Key(name, contentString) {
-  return `${PREFIX}/${name}-${md5(contentString)}`
+function createS3Key(name) {
+  return `${PREFIX}/${name}`
 }
 
 function getFileAsText(url, headers) {
@@ -53,10 +53,10 @@ function headObject(key) {
     S3.headObject(params, function (err, metadata) {  
       if (err) { 
         console.log(`Key not found: ${key} ${err}`);
-        resolve(false);
+        reject(err);
       } else {
         console.log(`S3 key already exists under: ${key}`);
-        resolve(true);
+        resolve(metadata);
       }
     });
   });
@@ -91,13 +91,22 @@ exports.handler = function(event, context) {
       console.log(`Getting url: ${url}`);
 
       getFileAsText(url, headers)
-        .then(content => {
-          const s3key = createS3Key(name, content);
-          headObject(s3key).then(exists => {
-            if (!exists) {
-              putObject(s3key, content);
-            }
-          });
+        .then(contentAsText => {
+          const s3key = createS3Key(name);
+
+          headObject(s3key)
+            .then(metaData => {
+              const contentMd5 = md5(contentAsText);
+              const s3ContentHash = metaData.ETag.slice(1, -1); //It is a double quoted string ""abc123""
+              
+              if (s3ContentHash !== contentMd5) {
+                console.log(`${name} has changed from ${s3ContentHash} to ${contentMd5}`);
+                putObject(s3key, contentAsText);
+              }
+            })
+            .catch(error => {
+              putObject(s3key, contentAsText);
+            });
         })
         .catch((error) => {
           console.log(`Error getting ${url}: ${error}`);
