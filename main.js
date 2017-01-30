@@ -31,7 +31,8 @@ const urlsToCheck = [
   },
   {
     name: 'integral-jload',
-    url: 'https://pixel.adsafeprotected.com/jload?anId=10249&campId=1x1&pubId=45476727&chanId=61695567&placementId=138817647&pubCreative=105372992247&pubOrder=357022887&custom=RecommendedForYouRecommendations-user-hi&custom2=top-above-nav&custom3=wide'
+    url: 'https://pixel.adsafeprotected.com/jload?anId=10249&campId=1x1&pubId=45476727&chanId=61695567&placementId=138817647&pubCreative=105372992247&pubOrder=357022887&custom=RecommendedForYouRecommendations-user-hi&custom2=top-above-nav&custom3=wide',
+    byteCompare: true
   }
 ]
 
@@ -87,6 +88,7 @@ exports.handler = function(event, context) {
       const name = check.name;
       const url = check.url;
       const headers = check.headers;
+      const byteCompare = check.byteCompare;
 
       console.log(`Getting url: ${url}`);
 
@@ -97,9 +99,17 @@ exports.handler = function(event, context) {
           headObject(s3key)
             .then(metaData => {
               const contentMd5 = md5(contentAsText);
+              const contentLength = contentAsText.length.toString();
               const s3ContentHash = metaData.ETag.slice(1, -1); //It is a double quoted string ""abc123""
-              
-              if (s3ContentHash !== contentMd5) {
+              const s3ContentLength = metaData.ContentLength;
+
+              if (byteCompare) {
+                if (contentLength !== s3ContentLength) {
+                  console.log(`${name} has changed length from ${s3ContentLength} to ${contentLength}`);
+                  putObject(s3key, contentAsText);
+                }
+              }
+              else if (s3ContentHash !== contentMd5) {
                 console.log(`${name} has changed from ${s3ContentHash} to ${contentMd5}`);
                 putObject(s3key, contentAsText);
               }
